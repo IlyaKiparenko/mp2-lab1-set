@@ -105,18 +105,13 @@ int TBitField::operator==(const TBitField &bf) const // сравнение
 	int sum=0;
 	if(BitLen==bf.BitLen)
 	{
-		for(int i=0; i<MemLen-1; i++)
+		if(BitLen==0) return 1;
+		int i=0; 
+		while ((i<MemLen-1)&& (pMem[i]==bf.pMem[i]))
 		{
-			sum+=(pMem[i]!=bf.pMem[i]);
+			i++;
 		}
-		for(int i=32*(MemLen-1); i<BitLen; i++)
-		{
-			sum+=(GetBit(i)!=bf.GetBit(i));
-		}
-
-		return (sum==0);
-
-
+		return ((i==MemLen-1) && ((pMem[MemLen-1]-bf.pMem[MemLen-1])<<(32-(BitLen%32))==0));
 	}else
 		return false;
 
@@ -130,38 +125,60 @@ int TBitField::operator!=(const TBitField &bf) const // сравнение
 
 TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 {
+	int i=0;
 	if(BitLen>bf.BitLen) {
 		TBitField t(*this);
-		for(int i=0; i<bf.MemLen; i++)
+		for(i=0; i<bf.MemLen-1; i++)
 		{
 			t.pMem[i] |=bf.pMem[i];
 		}
+
+		int q=bf.BitLen%32;
+		int Mask = ~(((~0)>>q)<<q);
+		t.pMem[i]=(bf.pMem[i]&Mask)|pMem[i];
+
 		return t;
 	}else{	
 		TBitField t(bf);
-		for(int i=0; i<MemLen; i++)
+		for(i=0; i<MemLen-1; i++)
 		{
 			t.pMem[i] |=pMem[i];
 		}	
+
+		int q=BitLen%32;
+		int Mask = ~(((~0)>>q)<<q);
+		t.pMem[i]=(pMem[i]&Mask)|bf.pMem[i];
+
 		return t;
 	}
 }
 
 TBitField TBitField::operator&(const TBitField &bf) // операция "и"
 {
+	int i=0;
 	if(BitLen>bf.BitLen) {
 		TBitField t(BitLen);
-		for(int i=0; i<bf.MemLen; i++)
+		for(i=0; i<bf.MemLen-1; i++)
 		{
-			t.pMem[i] =pMem[i] & bf.pMem[i];
+			t.pMem[i] =pMem[i]&bf.pMem[i];
 		}
+
+		int q=bf.BitLen%32;
+		int Mask = ~(((~0)>>q)<<q);
+		t.pMem[i]=(pMem[i]&Mask)&bf.pMem[i];
+
 		return t;
 	}else{	
 		TBitField t(bf.BitLen);
-		for(int i=0; i<MemLen; i++)
+		for(i=0; i<MemLen-1; i++)
 		{
-			t.pMem[i] =pMem[i] & bf.pMem[i];
+			t.pMem[i] =pMem[i]&bf.pMem[i];
 		}	
+
+		int q=BitLen%32;
+		int Mask = ~(((~0)>>q)<<q);
+		t.pMem[i]=(bf.pMem[i]&Mask)&pMem[i];
+
 		return t;
 	}
 }
@@ -199,5 +216,6 @@ ostream &operator<<(ostream &ostr, const TBitField &bf) // вывод
 	{
 		ostr << bf.GetBit(i) << ' ';
 	}
+
 	return ostr;
 }
